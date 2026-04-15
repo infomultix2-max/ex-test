@@ -1,7 +1,7 @@
 {
   "id": "com.novon.mknov",
   "name": "MKNov (مملكة الروايات)",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "apiVersion": "1",
   "minAppVersion": "0.0.1",
   "maxAppVersion": null,
@@ -21,7 +21,7 @@
   "supportsSearch": true,
   "supportsFilters": false,
   "icon": "icon.png",
-  "sha256": "27cda66d54add7573605fafd4b2999b520e064980811b111b14aef6ce2c09a95",
+  "sha256": "5d7ed2518310da1e8b843dcf22a9397bda31ecafb598b6dd8f4c176f37906d34",
   "sourceUrl": "https://github.com/novonapp/extensions/tree/main",
   "updateUrl": "https://raw.githubusercontent.com/novonapp/extensions/main/index.json",
   "authorName": "MultiX0",
