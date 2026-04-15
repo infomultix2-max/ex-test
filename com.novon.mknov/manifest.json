@@ -1,12 +1,33 @@
 {
   "id": "com.novon.mknov",
   "name": "MKNov (مملكة الروايات)",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "apiVersion": "1",
   "minAppVersion": "0.0.1",
+  "maxAppVersion": null,
   "lang": "ar",
   "baseUrl": "https://mknov.com",
-  "authorName": "MultiX0",
+  "domains": [
+    "mknov.com",
+    "www.mknov.com"
+  ],
+  "categories": [
+    "webnovel",
+    "aggregator"
+  ],
+  "nsfw": false,
+  "hasCloudflare": false,
+  "supportsLatest": true,
+  "supportsSearch": true,
+  "supportsFilters": false,
   "icon": "icon.png",
-  "sha256": "27cda66d54add7573605fafd4b2999b520e064980811b111b14aef6ce2c09a95"
+  "sha256": "27cda66d54add7573605fafd4b2999b520e064980811b111b14aef6ce2c09a95",
+  "sourceUrl": "https://github.com/novonapp/extensions/tree/main",
+  "updateUrl": "https://raw.githubusercontent.com/novonapp/extensions/main/index.json",
+  "authorName": "MultiX0",
+  "authorUrl": "",
+  "tags": [
+    "arabic",
+    "translated"
+  ]
 }
