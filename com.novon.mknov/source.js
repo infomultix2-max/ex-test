@@ -191,7 +191,7 @@
 
         // Handle streaming flight data signals
         try {
-            // Robust regex to capture payload from any self.__next_f.push calls
+            // Match push([<index>, "payload"]) where index can be any number
             const flightRegex = /self\.__next_f\.push\(\[\d+,\s*\"((?:[^\"\\]|\\.)*)\"\]\)/g;
             let match;
             let combinedData = '';
@@ -208,7 +208,6 @@
             while ((jsonMatch = jsonRegex.exec(combinedData)) !== null) {
                 try {
                     const parsed = JSON.parse(jsonMatch[1]);
-                    // Check if any significant key exists
                     if (keys.some(k => parsed.hasOwnProperty(k))) return parsed;
                 } catch (e) {}
             }
@@ -217,7 +216,7 @@
     }
 
     function extractNovelId(url) {
-        const match = url.match(/\/novel\/(\d+)/);
+        const match = (url || '').match(/\/novel\/(\d+)/);
         return match ? match[1] : null;
     }
 
@@ -229,7 +228,6 @@
         let novels = [];
         let hasNextPage = false;
 
-        // Try JSON extraction first
         if (data) {
             const novelsData = data.novels || data.works || data.latestWorks || data.mostReadWorks;
             if (novelsData && Array.isArray(novelsData.data || novelsData)) {
@@ -243,18 +241,13 @@
             }
         } 
         
-        // Fallback to DOM parsing
         if (novels.length === 0) {
             const doc = parseHtml(html);
-            // Very aggressive selector for novel links
             novels = doc.querySelectorAll("a[href^='/novel/']").map(element => {
                 const href = element.attr('href') || '';
-                // Ensure it's a novel link, not a chapter link
                 if (href.includes('/chapter/')) return null;
-                
                 const titleTag = element.querySelector('h3') || element.querySelector('h2') || element.querySelector('b');
                 const imgTag = element.querySelector('img');
-                
                 if (titleTag || imgTag) {
                     return {
                         url: toAbsolute(href),
@@ -265,7 +258,6 @@
                 return null;
             }).filter(n => n && n.title && n.title !== 'الرئيسية');
             
-            // Deduplicate by URL
             const seen = new Set();
             novels = novels.filter(n => {
                 const k = n.url;
@@ -273,8 +265,7 @@
                 seen.add(k);
                 return true;
             });
-
-            hasNextPage = novels.length > 0 && page < 20; // Heuristic
+            hasNextPage = novels.length > 0 && page < 20;
         }
 
         return { novels, hasNextPage };
@@ -335,45 +326,82 @@
     }
 
     async function fetchNovelDetail(novelUrl) {
+        const id = extractNovelId(novelUrl);
+        
+        // Primary: Use clean API provided by user
+        if (id) {
+            try {
+                const apiResult = await http.get(`${PRIMARY_BASE}/api/novels/${id}`);
+                const json = JSON.parse(apiResult);
+                if (json.success && json.data) {
+                    const novel = json.data;
+                    return {
+                        url: toAbsolute(novelUrl),
+                        title: novel.name || novel.title,
+                        author: novel.author || 'Unknown',
+                        description: (novel.story || novel.description || '').trim(),
+                        status: (novel.status || '').toLowerCase() === 'ongoing' ? 'ongoing' : ((novel.status || '').toLowerCase() === 'completed' ? 'completed' : 'unknown'),
+                        genres: Array.isArray(novel.tags) ? novel.tags : ((novel.categories || []).map(c => c.name)),
+                        coverUrl: (novel.image_url || novel.cover) ? toAbsolute(novel.image_url || novel.cover) : ''
+                    };
+                }
+            } catch (e) {
+                console.log('[MKNOV] API Novel Detail failed: ' + e);
+            }
+        }
+
+        // Secondary: Extract from page data (RSC)
         const html = await getWithFallback(novelUrl);
         const data = extractData(html);
-
         if (data && (data.novel || data.work)) {
             const novel = data.novel || data.work;
             return {
                 url: toAbsolute(novelUrl),
                 title: novel.title || novel.name,
                 author: novel.author || 'Unknown',
-                description: novel.description || novel.summary || '',
+                description: (novel.description || novel.summary || '').trim(),
                 status: (novel.status || '').includes('مستمرة') ? 'ongoing' : ((novel.status || '').includes('مكتملة') ? 'completed' : 'unknown'),
                 genres: (novel.categories || []).map(c => c.name),
                 coverUrl: (novel.cover || novel.image_url) ? toAbsolute(novel.cover || novel.image_url) : ''
             };
-        } else {
-            const doc = parseHtml(html);
-            const title = (doc.querySelector('h1') || doc.querySelector('h2') || {}).text || 'Unknown Title';
-            const author = (doc.querySelector('.author') || doc.querySelector('a[href*="/writer/"]') || {}).text || 'Unknown Author';
-            const description = (doc.querySelector('.description') || doc.querySelector('.summary') || doc.querySelector('.entry-content') || {}).text || '';
-            const genres = doc.querySelectorAll('.genre a, .categories a, .mgen a').map(a => a.text.trim());
-            const coverNode = doc.querySelector('.thumb img') || doc.querySelector('.novel-cover img') || doc.querySelector('img[src*="/uploads/"]');
-            
-            return {
-                url: toAbsolute(novelUrl),
-                title: title.trim(),
-                author: author.trim(),
-                description: description.trim(),
-                status: 'unknown',
-                genres,
-                coverUrl: _pickImageUrl(coverNode)
-            };
-        }
+        } 
+        
+        // Final fallback: DOM parsing
+        const doc = parseHtml(html);
+        const titleNode = doc.querySelector('h1') || doc.querySelector('h2');
+        const authorNode = doc.querySelector('.author') || doc.querySelector('a[href*="/writer/"]');
+        const descNode = doc.querySelector('.description') || doc.querySelector('.summary') || doc.querySelector('.entry-content');
+        const coverNode = doc.querySelector('.thumb img') || doc.querySelector('.novel-cover img') || doc.querySelector('img[src*="/uploads/"]');
+        
+        return {
+            url: toAbsolute(novelUrl),
+            title: (titleNode ? titleNode.text : 'Unknown').trim(),
+            author: (authorNode ? authorNode.text : 'Unknown').trim(),
+            description: (descNode ? descNode.text : '').trim(),
+            status: 'unknown',
+            genres: doc.querySelectorAll('.genre a, .categories a, .mgen a').map(a => a.text.trim()),
+            coverUrl: _pickImageUrl(coverNode)
+        };
     }
 
     async function fetchChapterList(novelUrl) {
         const id = extractNovelId(novelUrl);
         if (!id) throw new Error('Invalid novel URL');
 
-        // Try API first
+        // Primary: Attempt /api/novels/{id} as it contains chapters too
+        try {
+            const apiResult = await http.get(`${PRIMARY_BASE}/api/novels/${id}`);
+            const json = JSON.parse(apiResult);
+            if (json.success && json.data && json.data.chapters) {
+                return json.data.chapters.map(item => ({
+                    url: toAbsolute(`/novel/${id}/chapter/${item.id}`),
+                    name: (item.volume_title ? `${item.volume_title} : ` : '') + (item.chapter_title || 'فصل ' + item.chapter_number),
+                    number: item.chapter_number
+                })).sort((a, b) => (a.number || 0) - (b.number || 0));
+            }
+        } catch (e) {}
+
+        // Secondary: Use specific chapters API
         try {
             const apiUrl = `${PRIMARY_BASE}/api/works/${id}/chapters`;
             const jsonStr = await http.get(apiUrl);
@@ -387,7 +415,7 @@
             }
         } catch (e) {}
 
-        // Fallback to page data (RSC)
+        // Tertiary: Extract from RSC page data
         const html = await getWithFallback(novelUrl);
         const data = extractData(html);
         if (data && (data.chapters || (data.work && data.work.chapters))) {
@@ -399,7 +427,6 @@
             })).sort((a, b) => (a.number || 0) - (b.number || 0));
         }
 
-        // Final fallback: return empty if no chapters found
         return [];
     }
 
@@ -432,5 +459,5 @@
     globalThis.fetchChapterList = fetchChapterList;
     globalThis.fetchChapterContent = fetchChapterContent;
 
-    console.log('[MKNOV] Extension initialized with robust extraction.');
+    console.log('[MKNOV] Extension initialized with API-first detail fetching.');
 })();
