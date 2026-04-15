@@ -5,10 +5,10 @@ import hashlib
 from datetime import datetime, timezone
 
 # --- CONFIGURATION ---
-ORG_NAME = "novon-app"
-REPO_NAME = "extensions"
+ORG_NAME = "infomultix2-max"
+REPO_NAME = "ex-test"
 BRANCH = "main"
-REGISTRY_DISPLAY_NAME = "Novon Official Extensions"
+REGISTRY_DISPLAY_NAME = "Testing"
 # ---------------------
 
 BASE_URL = f"https://raw.githubusercontent.com/{ORG_NAME}/{REPO_NAME}/{BRANCH}"

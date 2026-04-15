@@ -1,8 +1,8 @@
 {
-  "repoName": "Novon Official Extensions",
-  "repoUrl": "https://raw.githubusercontent.com/novon-app/extensions/main/index.json",
+  "repoName": "Testing",
+  "repoUrl": "https://raw.githubusercontent.com/infomultix2-max/ex-test/main/index.json",
   "maintainerUrl": "https://github.com/MultiX0",
-  "generated": "2026-04-15T20:47:20Z",
+  "generated": "2026-04-15T21:01:27Z",
   "apiVersion": "2",
   "extensions": [
     {
@@ -18,10 +18,10 @@
         "webnovel",
         "aggregator"
       ],
-      "icon": "https://raw.githubusercontent.com/novon-app/extensions/main/icons/kolnovel.png",
-      "downloadUrl": "https://raw.githubusercontent.com/novon-app/extensions/main/bundles/com.novon.kolnovel-1.3.7.novext",
-      "sha256": "b6b4b86a2aec8f245f6af091bca08c0689d6fa5102009f76c34af801a34ffffa",
-      "updatedAt": "2026-04-15T20:47:20Z"
+      "icon": "https://raw.githubusercontent.com/infomultix2-max/ex-test/main/icons/kolnovel.png",
+      "downloadUrl": "https://raw.githubusercontent.com/infomultix2-max/ex-test/main/bundles/com.novon.kolnovel-1.3.7.novext",
+      "sha256": "619c3dcd56322da9f169ef2f83130ad9adc9a0d6827bae2578a10896bfde9ddd",
+      "updatedAt": "2026-04-15T21:01:27Z"
     },
     {
       "id": "com.novon.mtlarabic",
@@ -37,10 +37,10 @@
         "aggregator",
         "mtl"
       ],
-      "icon": "https://raw.githubusercontent.com/novon-app/extensions/main/icons/mtlarabic.png",
-      "downloadUrl": "https://raw.githubusercontent.com/novon-app/extensions/main/bundles/com.novon.mtlarabic-1.3.6.novext",
-      "sha256": "f4516673a87aaba0584786789be46c3e78e8a5366b6f00a90066c9ed2d5a5e4e",
-      "updatedAt": "2026-04-15T20:47:20Z"
+      "icon": "https://raw.githubusercontent.com/infomultix2-max/ex-test/main/icons/mtlarabic.png",
+      "downloadUrl": "https://raw.githubusercontent.com/infomultix2-max/ex-test/main/bundles/com.novon.mtlarabic-1.3.6.novext",
+      "sha256": "e029584cc8896dd7d4a82c43912713e9cba53bc194809a06a23b3423c34c710e",
+      "updatedAt": "2026-04-15T21:01:27Z"
     },
     {
       "id": "com.novon.template",
@@ -54,10 +54,10 @@
       "categories": [
         "webnovel"
       ],
-      "icon": "https://raw.githubusercontent.com/novon-app/extensions/main/icons/template.png",
-      "downloadUrl": "https://raw.githubusercontent.com/novon-app/extensions/main/bundles/com.novon.template-1.0.0.novext",
-      "sha256": "dba0b0e9ff4c8fc50f780cfa3eef5e88a0bfbd7127204768a8725ff9a49a32ef",
-      "updatedAt": "2026-04-15T20:47:20Z"
+      "icon": "https://raw.githubusercontent.com/infomultix2-max/ex-test/main/icons/template.png",
+      "downloadUrl": "https://raw.githubusercontent.com/infomultix2-max/ex-test/main/bundles/com.novon.template-1.0.0.novext",
+      "sha256": "8d0383b0da0375c18620ba0e135fd42575cc18ad140266085375c547f21f40cc",
+      "updatedAt": "2026-04-15T21:01:27Z"
     },
     {
       "id": "com.novon.mknov",
@@ -69,10 +69,10 @@
       "nsfw": false,
       "hasCloudflare": false,
       "categories": [],
-      "icon": "https://raw.githubusercontent.com/novon-app/extensions/main/icons/mknov.png",
-      "downloadUrl": "https://raw.githubusercontent.com/novon-app/extensions/main/bundles/com.novon.mknov-1.0.0.novext",
-      "sha256": "430530e785d22f607db9384170a6016444d300d1ca4b01706dbf314b73ef07b8",
-      "updatedAt": "2026-04-15T20:47:20Z"
+      "icon": "https://raw.githubusercontent.com/infomultix2-max/ex-test/main/icons/mknov.png",
+      "downloadUrl": "https://raw.githubusercontent.com/infomultix2-max/ex-test/main/bundles/com.novon.mknov-1.0.0.novext",
+      "sha256": "092c90de4a9cf64556475d5d02a66efe549eec976796a8cfa3834788de8f4dfd",
+      "updatedAt": "2026-04-15T21:01:27Z"
     }
   ]
 }
