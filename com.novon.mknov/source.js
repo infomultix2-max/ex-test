@@ -180,18 +180,13 @@
     function extractData(html) {
         if (!html) return null;
         
-        // Handle standard __NEXT_DATA__
         const nextDataRegex = /<script id="__NEXT_DATA__" type="application\/json">([\s\S]*?)<\/script>/;
         const nextDataMatch = html.match(nextDataRegex);
         if (nextDataMatch && nextDataMatch[1]) {
-            try {
-                return JSON.parse(nextDataMatch[1]);
-            } catch (e) {}
+            try { return JSON.parse(nextDataMatch[1]); } catch (e) {}
         }
 
-        // Handle streaming flight data signals
         try {
-            // Match push([<index>, "payload"]) where index can be any number
             const flightRegex = /self\.__next_f\.push\(\[\d+,\s*\"((?:[^\"\\]|\\.)*)\"\]\)/g;
             let match;
             let combinedData = '';
@@ -200,16 +195,39 @@
                 combinedData += part;
             }
             
-            // Broaden search to include various React Server Component data keys
-            const keys = ["id", "chapter", "chapters", "novel", "novels", "works", "searchResults", "work", "latestWorks", "mostReadWorks"];
-            const jsonRegex = new RegExp('(\\{(\"(' + keys.join('|') + ')\"):[\s\S]*?\\})(?=\\]|$)', 'g');
+            const keys = ["id", "chapter", "chapters", "novel", "novels", "works", "searchResults", "work", "latestWorks", "mostReadWorks", "results"];
             
-            let jsonMatch;
-            while ((jsonMatch = jsonRegex.exec(combinedData)) !== null) {
-                try {
-                    const parsed = JSON.parse(jsonMatch[1]);
-                    if (keys.some(k => parsed.hasOwnProperty(k))) return parsed;
-                } catch (e) {}
+            for (const key of keys) {
+                const markers = [`"${key}":`, `\\"${key}\\":`];
+                for (const marker of markers) {
+                    let lastIdx = 0;
+                    while ((lastIdx = combinedData.indexOf(marker, lastIdx)) !== -1) {
+                        let braceStart = combinedData.lastIndexOf('{', lastIdx);
+                        if (braceStart === -1 || (combinedData.lastIndexOf('[', lastIdx) > braceStart)) {
+                            braceStart = combinedData.lastIndexOf('[', lastIdx);
+                        }
+                        
+                        if (braceStart !== -1) {
+                            const chunk = combinedData.substring(braceStart);
+                            let open = 0;
+                            let started = false;
+                            for (let j = 0; j < Math.min(chunk.length, 100000); j++) {
+                                if (chunk[j] === '{' || chunk[j] === '[') { open++; started = true; }
+                                else if (chunk[j] === '}' || chunk[j] === ']') { open--; }
+                                if (started && open === 0) {
+                                    try {
+                                        const sub = chunk.substring(0, j + 1);
+                                        const parsed = JSON.parse(sub);
+                                        // If it's the right object, it should have the key or be the array itself
+                                        if (parsed.hasOwnProperty(key)) return parsed;
+                                        if (Array.isArray(parsed) && marker.includes("chapters")) return parsed;
+                                    } catch (e) {}
+                                }
+                            }
+                        }
+                        lastIdx += marker.length;
+                    }
+                }
             }
         } catch (e) {}
         return null;
@@ -284,32 +302,43 @@
         let hasNextPage = false;
 
         if (data) {
-            const novelsData = data.novels || data.searchResults || data.works;
-            if (novelsData && Array.isArray(novelsData.data || novelsData)) {
-                const list = novelsData.data || novelsData;
-                novels = list.map(item => ({
-                    url: toAbsolute(`/novel/${item.id}/${item.slug || ''}`),
-                    title: item.title || item.name,
-                    coverUrl: item.cover || item.image_url ? toAbsolute(item.cover || item.image_url) : ''
-                }));
-                hasNextPage = novelsData.next_page_url !== undefined ? novelsData.next_page_url !== null : false;
+            const novelsData = data.searchResults || data.novels || data.works || data.results || data.searchResultsBlock;
+            if (novelsData) {
+                const list = Array.isArray(novelsData.data) ? novelsData.data : (Array.isArray(novelsData) ? novelsData : null);
+                if (list) {
+                    novels = list.map(item => ({
+                        url: toAbsolute(`/novel/${item.id}/${item.slug || ''}`),
+                        title: item.title || item.name,
+                        coverUrl: (item.cover || item.image_url) ? toAbsolute(item.cover || item.image_url) : ''
+                    }));
+                    
+                    const meta = novelsData.meta || {};
+                    const lastPage = meta.last_page || meta.lastPage || 0;
+                    const currentPage = meta.current_page || meta.currentPage || page;
+                    hasNextPage = lastPage > currentPage;
+                    
+                    if (novelsData.next_page_url) hasNextPage = true;
+                }
             }
         } 
         
         if (novels.length === 0) {
             const doc = parseHtml(html);
-            novels = doc.querySelectorAll("a[href^='/novel/']").map(element => {
-                if ((element.attr('href') || '').includes('/chapter/')) return null;
-                const titleTag = element.querySelector('h3') || element.querySelector('h2');
+            const resultLinks = doc.querySelectorAll("a[href*='/novel/']");
+            novels = resultLinks.map(element => {
+                const href = element.attr('href') || '';
+                if (href.includes('/chapter/')) return null;
+                
+                const titleNode = element.querySelector('h3, h2, b, strong, .title');
+                const title = (titleNode ? titleNode.text : element.text).trim();
+                if (!title || title === 'الرئيسية' || title.length < 2) return null;
+
                 const imgTag = element.querySelector('img');
-                if (titleTag || imgTag) {
-                    return {
-                        url: toAbsolute(element.attr('href')),
-                        title: (titleTag ? titleTag.text : (imgTag ? imgTag.attr('alt') : 'Unknown')).trim(),
-                        coverUrl: _pickImageUrl(imgTag)
-                    };
-                }
-                return null;
+                return {
+                    url: toAbsolute(href),
+                    title: title,
+                    coverUrl: _pickImageUrl(imgTag)
+                };
             }).filter(n => n && n.title);
             
             const seen = new Set();
