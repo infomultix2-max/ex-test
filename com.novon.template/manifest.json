@@ -1,0 +1,32 @@
+{
+  "id": "com.novon.template",
+  "name": "Template Palette",
+  "version": "1.0.0",
+  "apiVersion": "1",
+  "minAppVersion": "0.0.1",
+  "maxAppVersion": null,
+  "lang": "en",
+  "baseUrl": "https://example.com",
+  "domains": [
+    "example.com"
+  ],
+  "categories": [
+    "webnovel"
+  ],
+  "nsfw": false,
+  "hasCloudflare": false,
+  "supportsLatest": true,
+  "supportsSearch": true,
+  "supportsFilters": false,
+  "icon": "icon.png",
+  "sha256": "1969d018428fae2a86c06b9429f49de742ccbe6d2dee4e05edc96077127742ff",
+  "sourceUrl": "",
+  "updateUrl": "",
+  "authorName": "MultiX0",
+  "maintainedBy": "MultiX0",
+  "authorUrl": "https://github.com/MultiX0",
+  "tags": [
+    "template",
+    "palette"
+  ]
+}

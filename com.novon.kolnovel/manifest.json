@@ -1,0 +1,34 @@
+{
+  "id": "com.novon.kolnovel",
+  "name": "KolNovel",
+  "version": "1.3.7",
+  "apiVersion": "1",
+  "minAppVersion": "0.0.1",
+  "maxAppVersion": null,
+  "lang": "ar",
+  "baseUrl": "https://free.kolnovel.com",
+  "domains": [
+    "kolnovel.com",
+    "www.kolnovel.com",
+    "free.kolnovel.com"
+  ],
+  "categories": [
+    "webnovel",
+    "aggregator"
+  ],
+  "nsfw": false,
+  "hasCloudflare": true,
+  "supportsLatest": true,
+  "supportsSearch": true,
+  "supportsFilters": false,
+  "icon": "icon.png",
+  "sha256": "52ac537d96f39866840d3660ebdd07ae8e5918914d22e98bd9eb02e01577536e",
+  "sourceUrl": "https://github.com/novonapp/extensions/tree/main",
+  "updateUrl": "https://raw.githubusercontent.com/novonapp/extensions/main/index.json",
+  "authorName": "None",
+  "authorUrl": "",
+  "tags": [
+    "arabic",
+    "translated"
+  ]
+}
