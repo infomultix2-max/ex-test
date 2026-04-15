@@ -2,7 +2,7 @@
   "repoName": "Testing",
   "repoUrl": "https://raw.githubusercontent.com/infomultix2-max/ex-test/main/index.json",
   "maintainerUrl": "https://github.com/MultiX0",
-  "generated": "2026-04-15T23:03:28Z",
+  "generated": "2026-04-15T23:22:24Z",
   "apiVersion": "2",
   "extensions": [
     {
@@ -20,8 +20,8 @@
       ],
       "icon": "https://raw.githubusercontent.com/infomultix2-max/ex-test/main/com.novon.kolnovel/icon.png",
       "downloadUrl": "https://raw.githubusercontent.com/infomultix2-max/ex-test/main/bundles/com.novon.kolnovel-1.3.7.novext",
-      "sha256": "4bc424959f9e001010331c64042660d731a31ba15e41dacd041c4ba5f18400b2",
-      "updatedAt": "2026-04-15T23:03:28Z"
+      "sha256": "3d900012a80d82cd4531f93ed1232aa7763290d9f9aba111dfdd1e287beb409b",
+      "updatedAt": "2026-04-15T23:22:24Z"
     },
     {
       "id": "com.novon.mtlarabic",
@@ -39,8 +39,8 @@
       ],
       "icon": "https://raw.githubusercontent.com/infomultix2-max/ex-test/main/com.novon.mtlarabic/icon.png",
       "downloadUrl": "https://raw.githubusercontent.com/infomultix2-max/ex-test/main/bundles/com.novon.mtlarabic-1.3.6.novext",
-      "sha256": "ebc14152ef46a6ff35efff5e91b560fd71b27d0d59a1566bb29887dfe1ac58d6",
-      "updatedAt": "2026-04-15T23:03:28Z"
+      "sha256": "fb89ac9e56dfaa0fc6e3faed2b786027ff01599d2f66dd1259f10b74aa0b85df",
+      "updatedAt": "2026-04-15T23:22:24Z"
     },
     {
       "id": "com.novon.template",
@@ -56,13 +56,13 @@
       ],
       "icon": "https://raw.githubusercontent.com/infomultix2-max/ex-test/main/com.novon.template/icon.png",
       "downloadUrl": "https://raw.githubusercontent.com/infomultix2-max/ex-test/main/bundles/com.novon.template-1.0.0.novext",
-      "sha256": "ccbd2225c87ae5ecc31cabcd57f82ddd604aaf7d62e6deee9265be24c001549e",
-      "updatedAt": "2026-04-15T23:03:28Z"
+      "sha256": "ae2a6820cc8b53f0a36b91cf515449cd0ab2ea8d157a463cd2371729ae8b89c7",
+      "updatedAt": "2026-04-15T23:22:24Z"
     },
     {
       "id": "com.novon.mknov",
       "name": "MKNov (مملكة الروايات)",
-      "version": "1.2.6",
+      "version": "1.2.7",
       "apiVersion": "1",
       "minAppVersion": "0.0.1",
       "lang": "ar",
@@ -70,9 +70,9 @@
       "hasCloudflare": false,
       "categories": [],
       "icon": "https://raw.githubusercontent.com/infomultix2-max/ex-test/main/com.novon.mknov/icon.png",
-      "downloadUrl": "https://raw.githubusercontent.com/infomultix2-max/ex-test/main/bundles/com.novon.mknov-1.2.6.novext",
-      "sha256": "5a6b7a13be923f93575826e357cc8ea08c0e513b0cf8ec0db62c330bf954a2a8",
-      "updatedAt": "2026-04-15T23:03:28Z"
+      "downloadUrl": "https://raw.githubusercontent.com/infomultix2-max/ex-test/main/bundles/com.novon.mknov-1.2.7.novext",
+      "sha256": "18d95a3c36edd4a6c0c38f323823ad01ae9d31d187c6c7993b9c4a600b462de3",
+      "updatedAt": "2026-04-15T23:22:24Z"
     }
   ]
 }
