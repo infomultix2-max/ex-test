@@ -178,6 +178,7 @@
     }
 
     function extractData(html) {
+        // Handle standard __NEXT_DATA__
         const nextDataRegex = /<script id="__NEXT_DATA__" type="application\/json">([\s\S]*?)<\/script>/;
         const nextDataMatch = html.match(nextDataRegex);
         if (nextDataMatch && nextDataMatch[1]) {
@@ -186,20 +187,24 @@
             } catch (e) {}
         }
 
+        // Handle streaming flight data signals
         try {
             const flightRegex = /self\.__next_f\.push\(\[1, \"(.*?)\"\]\)/g;
             let match;
             let combinedData = '';
             while ((match = flightRegex.exec(html)) !== null) {
+                // Unescape strings (QuickJS environment safe unescape)
                 let part = match[1].replace(/\\"/g, '"').replace(/\\\\/g, '\\');
                 combinedData += part;
             }
-            const jsonRegex = /(\{(?:\"id\"|\"chapter\"|\"novel\"|\"novels\"):[\s\S]*?\})(?=\]|$)/g;
+            
+            // Broaden search to include various React Server Component data keys
+            const jsonRegex = /(\{(?:\"id\"|\"chapter\"|\"novel\"|\"novels\"|\"works\"|\"searchResults\"):[\s\S]*?\})(?=\]|$)/g;
             let jsonMatch;
             while ((jsonMatch = jsonRegex.exec(combinedData)) !== null) {
                 try {
                     const parsed = JSON.parse(jsonMatch[1]);
-                    if (parsed.chapter || parsed.novel || parsed.novels) return parsed;
+                    if (parsed.chapter || parsed.novel || parsed.novels || parsed.works || parsed.searchResults) return parsed;
                 } catch (e) {}
             }
         } catch (e) {}
@@ -219,23 +224,30 @@
         let novels = [];
         let hasNextPage = false;
 
-        if (data && data.novels) {
-            const novelsData = data.novels;
+        // Try JSON extraction first
+        if (data && (data.novels || data.works)) {
+            const novelsData = data.novels || data.works;
             novels = (novelsData.data || []).map(item => ({
                 url: toAbsolute(`/novel/${item.id}/${item.slug || ''}`),
                 title: item.title,
                 coverUrl: item.cover ? toAbsolute(item.cover) : ''
             }));
             hasNextPage = novelsData.next_page_url !== null;
-        } else {
+        } 
+        
+        // Fallback to DOM parsing if JSON failed or returned nothing
+        if (novels.length === 0) {
             const doc = parseHtml(html);
-            novels = doc.querySelectorAll('.bsx').map(element => {
-                const aTag = element.querySelector('a');
+            // Updated selector based on recent site inspection
+            novels = doc.querySelectorAll("a.block[href^='/novel/']").map(element => {
                 const imgTag = element.querySelector('img');
-                if (aTag) {
+                const titleTag = element.querySelector('h3') || element.querySelector('h2');
+                const href = element.attr('href') || '';
+                
+                if (href) {
                     return {
-                        url: toAbsolute(aTag.attr('href') || ''),
-                        title: aTag.attr('title') || imgTag.attr('alt') || 'Unknown Title',
+                        url: toAbsolute(href),
+                        title: (titleTag ? titleTag.text : (imgTag ? imgTag.attr('alt') : 'Unknown Title')).trim(),
                         coverUrl: _pickImageUrl(imgTag)
                     };
                 }
@@ -259,23 +271,28 @@
         let novels = [];
         let hasNextPage = false;
 
-        if (data && data.novels) {
-            const novelsData = data.novels;
+        if (data && (data.novels || data.searchResults || data.works)) {
+            const novelsData = data.novels || data.searchResults || data.works;
             novels = (novelsData.data || []).map(item => ({
                 url: toAbsolute(`/novel/${item.id}/${item.slug || ''}`),
                 title: item.title,
                 coverUrl: item.cover ? toAbsolute(item.cover) : ''
             }));
             hasNextPage = novelsData.next_page_url !== null;
-        } else {
+        } 
+        
+        if (novels.length === 0) {
             const doc = parseHtml(html);
-            novels = doc.querySelectorAll('.bsx').map(element => {
-                const aTag = element.querySelector('a');
-                if (aTag) {
+            novels = doc.querySelectorAll("a.block[href^='/novel/']").map(element => {
+                const imgTag = element.querySelector('img');
+                const titleTag = element.querySelector('h3') || element.querySelector('h2');
+                const href = element.attr('href') || '';
+                
+                if (href) {
                     return {
-                        url: toAbsolute(aTag.attr('href') || ''),
-                        title: aTag.attr('title') || 'Unknown Title',
-                        coverUrl: _pickImageUrl(element.querySelector('img'))
+                        url: toAbsolute(href),
+                        title: (titleTag ? titleTag.text : (imgTag ? imgTag.attr('alt') : 'Unknown Title')).trim(),
+                        coverUrl: _pickImageUrl(imgTag)
                     };
                 }
                 return null;
@@ -304,16 +321,16 @@
         } else {
             const doc = parseHtml(html);
             const title = (doc.querySelector('h1') || {}).text || 'Unknown Title';
-            const author = (doc.querySelector('.author') || {}).text || 'Unknown Author';
-            const description = (doc.querySelector('.description') || doc.querySelector('.summary') || {}).text || '';
-            const genres = doc.querySelectorAll('.genre a').map(a => a.text.trim());
-            const coverNode = doc.querySelector('.thumb img') || doc.querySelector('img');
+            const author = (doc.querySelector('.author') || doc.querySelector('a[href*="/writer/"]') || {}).text || 'Unknown Author';
+            const description = (doc.querySelector('.description') || doc.querySelector('.summary') || doc.querySelector('.entry-content') || {}).text || '';
+            const genres = doc.querySelectorAll('.genre a, .categories a, .mgen a').map(a => a.text.trim());
+            const coverNode = doc.querySelector('.thumb img') || doc.querySelector('.novel-cover img') || doc.querySelector('img');
             
             return {
                 url: toAbsolute(novelUrl),
-                title,
-                author,
-                description,
+                title: title.trim(),
+                author: author.trim(),
+                description: description.trim(),
                 status: 'unknown',
                 genres,
                 coverUrl: _pickImageUrl(coverNode)
@@ -331,8 +348,6 @@
 
         if (!response || !response.success || !response.data) return [];
 
-        // Chronological order: First to Last. 
-        // MKNov API returns them ordered, so we just map them.
         const chapters = response.data.map(item => {
             const volTitle = item.volume_title ? `${item.volume_title} : ` : '';
             return {
@@ -342,7 +357,6 @@
             };
         });
 
-        // Ensure chronological order (ascending chapter_number if available)
         return chapters.sort((a, b) => (a.number || 0) - (b.number || 0));
     }
 
@@ -361,7 +375,7 @@
             }
         } else {
             const doc = parseHtml(html);
-            const contentElement = doc.querySelector('.reading-content') || doc.querySelector('article');
+            const contentElement = doc.querySelector('.reading-content') || doc.querySelector('#chapter-content') || doc.querySelector('article');
             chapterHtml = _paragraphHtmlFrom(contentElement);
         }
 
@@ -375,5 +389,5 @@
     globalThis.fetchChapterList = fetchChapterList;
     globalThis.fetchChapterContent = fetchChapterContent;
 
-    console.log('[MKNOV] Extension initialized according to spec.');
+    console.log('[MKNOV] Extension initialized with fixed selectors and RSC data support.');
 })();
