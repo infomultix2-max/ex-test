@@ -178,6 +178,8 @@
     }
 
     function extractData(html) {
+        if (!html) return null;
+        
         // Handle standard __NEXT_DATA__
         const nextDataRegex = /<script id="__NEXT_DATA__" type="application\/json">([\s\S]*?)<\/script>/;
         const nextDataMatch = html.match(nextDataRegex);
@@ -189,22 +191,25 @@
 
         // Handle streaming flight data signals
         try {
-            const flightRegex = /self\.__next_f\.push\(\[1, \"(.*?)\"\]\)/g;
+            // Robust regex to capture payload from any self.__next_f.push calls
+            const flightRegex = /self\.__next_f\.push\(\[\d+,\s*\"((?:[^\"\\]|\\.)*)\"\]\)/g;
             let match;
             let combinedData = '';
             while ((match = flightRegex.exec(html)) !== null) {
-                // Unescape strings (QuickJS environment safe unescape)
                 let part = match[1].replace(/\\"/g, '"').replace(/\\\\/g, '\\');
                 combinedData += part;
             }
             
             // Broaden search to include various React Server Component data keys
-            const jsonRegex = /(\{(?:\"id\"|\"chapter\"|\"novel\"|\"novels\"|\"works\"|\"searchResults\"):[\s\S]*?\})(?=\]|$)/g;
+            const keys = ["id", "chapter", "chapters", "novel", "novels", "works", "searchResults", "work", "latestWorks", "mostReadWorks"];
+            const jsonRegex = new RegExp('(\\{(\"(' + keys.join('|') + ')\"):[\s\S]*?\\})(?=\\]|$)', 'g');
+            
             let jsonMatch;
             while ((jsonMatch = jsonRegex.exec(combinedData)) !== null) {
                 try {
                     const parsed = JSON.parse(jsonMatch[1]);
-                    if (parsed.chapter || parsed.novel || parsed.novels || parsed.works || parsed.searchResults) return parsed;
+                    // Check if any significant key exists
+                    if (keys.some(k => parsed.hasOwnProperty(k))) return parsed;
                 } catch (e) {}
             }
         } catch (e) {}
@@ -225,35 +230,51 @@
         let hasNextPage = false;
 
         // Try JSON extraction first
-        if (data && (data.novels || data.works)) {
-            const novelsData = data.novels || data.works;
-            novels = (novelsData.data || []).map(item => ({
-                url: toAbsolute(`/novel/${item.id}/${item.slug || ''}`),
-                title: item.title,
-                coverUrl: item.cover ? toAbsolute(item.cover) : ''
-            }));
-            hasNextPage = novelsData.next_page_url !== null;
+        if (data) {
+            const novelsData = data.novels || data.works || data.latestWorks || data.mostReadWorks;
+            if (novelsData && Array.isArray(novelsData.data || novelsData)) {
+                const list = novelsData.data || novelsData;
+                novels = list.map(item => ({
+                    url: toAbsolute(`/novel/${item.id}/${item.slug || ''}`),
+                    title: item.title || item.name,
+                    coverUrl: item.cover || item.image_url ? toAbsolute(item.cover || item.image_url) : ''
+                }));
+                hasNextPage = novelsData.next_page_url !== undefined ? novelsData.next_page_url !== null : false;
+            }
         } 
         
-        // Fallback to DOM parsing if JSON failed or returned nothing
+        // Fallback to DOM parsing
         if (novels.length === 0) {
             const doc = parseHtml(html);
-            // Updated selector based on recent site inspection
-            novels = doc.querySelectorAll("a.block[href^='/novel/']").map(element => {
-                const imgTag = element.querySelector('img');
-                const titleTag = element.querySelector('h3') || element.querySelector('h2');
+            // Very aggressive selector for novel links
+            novels = doc.querySelectorAll("a[href^='/novel/']").map(element => {
                 const href = element.attr('href') || '';
+                // Ensure it's a novel link, not a chapter link
+                if (href.includes('/chapter/')) return null;
                 
-                if (href) {
+                const titleTag = element.querySelector('h3') || element.querySelector('h2') || element.querySelector('b');
+                const imgTag = element.querySelector('img');
+                
+                if (titleTag || imgTag) {
                     return {
                         url: toAbsolute(href),
-                        title: (titleTag ? titleTag.text : (imgTag ? imgTag.attr('alt') : 'Unknown Title')).trim(),
+                        title: (titleTag ? titleTag.text : (imgTag ? imgTag.attr('alt') : 'Unknown')).trim(),
                         coverUrl: _pickImageUrl(imgTag)
                     };
                 }
                 return null;
-            }).filter(Boolean);
-            hasNextPage = novels.length > 0;
+            }).filter(n => n && n.title && n.title !== 'الرئيسية');
+            
+            // Deduplicate by URL
+            const seen = new Set();
+            novels = novels.filter(n => {
+                const k = n.url;
+                if (seen.has(k)) return false;
+                seen.add(k);
+                return true;
+            });
+
+            hasNextPage = novels.length > 0 && page < 20; // Heuristic
         }
 
         return { novels, hasNextPage };
@@ -271,32 +292,42 @@
         let novels = [];
         let hasNextPage = false;
 
-        if (data && (data.novels || data.searchResults || data.works)) {
+        if (data) {
             const novelsData = data.novels || data.searchResults || data.works;
-            novels = (novelsData.data || []).map(item => ({
-                url: toAbsolute(`/novel/${item.id}/${item.slug || ''}`),
-                title: item.title,
-                coverUrl: item.cover ? toAbsolute(item.cover) : ''
-            }));
-            hasNextPage = novelsData.next_page_url !== null;
+            if (novelsData && Array.isArray(novelsData.data || novelsData)) {
+                const list = novelsData.data || novelsData;
+                novels = list.map(item => ({
+                    url: toAbsolute(`/novel/${item.id}/${item.slug || ''}`),
+                    title: item.title || item.name,
+                    coverUrl: item.cover || item.image_url ? toAbsolute(item.cover || item.image_url) : ''
+                }));
+                hasNextPage = novelsData.next_page_url !== undefined ? novelsData.next_page_url !== null : false;
+            }
         } 
         
         if (novels.length === 0) {
             const doc = parseHtml(html);
-            novels = doc.querySelectorAll("a.block[href^='/novel/']").map(element => {
-                const imgTag = element.querySelector('img');
+            novels = doc.querySelectorAll("a[href^='/novel/']").map(element => {
+                if ((element.attr('href') || '').includes('/chapter/')) return null;
                 const titleTag = element.querySelector('h3') || element.querySelector('h2');
-                const href = element.attr('href') || '';
-                
-                if (href) {
+                const imgTag = element.querySelector('img');
+                if (titleTag || imgTag) {
                     return {
-                        url: toAbsolute(href),
-                        title: (titleTag ? titleTag.text : (imgTag ? imgTag.attr('alt') : 'Unknown Title')).trim(),
+                        url: toAbsolute(element.attr('href')),
+                        title: (titleTag ? titleTag.text : (imgTag ? imgTag.attr('alt') : 'Unknown')).trim(),
                         coverUrl: _pickImageUrl(imgTag)
                     };
                 }
                 return null;
-            }).filter(Boolean);
+            }).filter(n => n && n.title);
+            
+            const seen = new Set();
+            novels = novels.filter(n => {
+                const k = n.url;
+                if (seen.has(k)) return false;
+                seen.add(k);
+                return true;
+            });
             hasNextPage = novels.length > 0;
         }
 
@@ -307,24 +338,24 @@
         const html = await getWithFallback(novelUrl);
         const data = extractData(html);
 
-        if (data && data.novel) {
-            const novel = data.novel;
+        if (data && (data.novel || data.work)) {
+            const novel = data.novel || data.work;
             return {
                 url: toAbsolute(novelUrl),
-                title: novel.title,
+                title: novel.title || novel.name,
                 author: novel.author || 'Unknown',
-                description: novel.description || '',
-                status: (novel.status || '').includes('مستمرة') ? 'ongoing' : 'completed',
+                description: novel.description || novel.summary || '',
+                status: (novel.status || '').includes('مستمرة') ? 'ongoing' : ((novel.status || '').includes('مكتملة') ? 'completed' : 'unknown'),
                 genres: (novel.categories || []).map(c => c.name),
-                coverUrl: novel.cover ? toAbsolute(novel.cover) : ''
+                coverUrl: (novel.cover || novel.image_url) ? toAbsolute(novel.cover || novel.image_url) : ''
             };
         } else {
             const doc = parseHtml(html);
-            const title = (doc.querySelector('h1') || {}).text || 'Unknown Title';
+            const title = (doc.querySelector('h1') || doc.querySelector('h2') || {}).text || 'Unknown Title';
             const author = (doc.querySelector('.author') || doc.querySelector('a[href*="/writer/"]') || {}).text || 'Unknown Author';
             const description = (doc.querySelector('.description') || doc.querySelector('.summary') || doc.querySelector('.entry-content') || {}).text || '';
             const genres = doc.querySelectorAll('.genre a, .categories a, .mgen a').map(a => a.text.trim());
-            const coverNode = doc.querySelector('.thumb img') || doc.querySelector('.novel-cover img') || doc.querySelector('img');
+            const coverNode = doc.querySelector('.thumb img') || doc.querySelector('.novel-cover img') || doc.querySelector('img[src*="/uploads/"]');
             
             return {
                 url: toAbsolute(novelUrl),
@@ -342,22 +373,34 @@
         const id = extractNovelId(novelUrl);
         if (!id) throw new Error('Invalid novel URL');
 
-        const apiUrl = `${PRIMARY_BASE}/api/works/${id}/chapters`;
-        const jsonStr = await http.get(apiUrl);
-        const response = JSON.parse(jsonStr);
+        // Try API first
+        try {
+            const apiUrl = `${PRIMARY_BASE}/api/works/${id}/chapters`;
+            const jsonStr = await http.get(apiUrl);
+            const response = JSON.parse(jsonStr);
+            if (response && response.success && response.data) {
+                return response.data.map(item => ({
+                    url: toAbsolute(`/novel/${id}/chapter/${item.id}`),
+                    name: (item.volume_title ? `${item.volume_title} : ` : '') + (item.chapter_title || 'فصل ' + item.chapter_number),
+                    number: item.chapter_number
+                })).sort((a, b) => (a.number || 0) - (b.number || 0));
+            }
+        } catch (e) {}
 
-        if (!response || !response.success || !response.data) return [];
-
-        const chapters = response.data.map(item => {
-            const volTitle = item.volume_title ? `${item.volume_title} : ` : '';
-            return {
+        // Fallback to page data (RSC)
+        const html = await getWithFallback(novelUrl);
+        const data = extractData(html);
+        if (data && (data.chapters || (data.work && data.work.chapters))) {
+            const chaptersData = data.chapters || data.work.chapters;
+            return chaptersData.map(item => ({
                 url: toAbsolute(`/novel/${id}/chapter/${item.id}`),
-                name: `${volTitle}${item.chapter_title || 'فصل ' + item.chapter_number}`,
+                name: (item.volume_title ? `${item.volume_title} : ` : '') + (item.chapter_title || 'فصل ' + item.chapter_number),
                 number: item.chapter_number
-            };
-        });
+            })).sort((a, b) => (a.number || 0) - (b.number || 0));
+        }
 
-        return chapters.sort((a, b) => (a.number || 0) - (b.number || 0));
+        // Final fallback: return empty if no chapters found
+        return [];
     }
 
     async function fetchChapterContent(chapterUrl) {
@@ -375,7 +418,7 @@
             }
         } else {
             const doc = parseHtml(html);
-            const contentElement = doc.querySelector('.reading-content') || doc.querySelector('#chapter-content') || doc.querySelector('article');
+            const contentElement = doc.querySelector('.reading-content') || doc.querySelector('#chapter-content') || doc.querySelector('article') || doc.querySelector('.entry-content');
             chapterHtml = _paragraphHtmlFrom(contentElement);
         }
 
@@ -389,5 +432,5 @@
     globalThis.fetchChapterList = fetchChapterList;
     globalThis.fetchChapterContent = fetchChapterContent;
 
-    console.log('[MKNOV] Extension initialized with fixed selectors and RSC data support.');
+    console.log('[MKNOV] Extension initialized with robust extraction.');
 })();
