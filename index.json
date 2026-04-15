@@ -2,7 +2,7 @@
   "repoName": "Testing",
   "repoUrl": "https://raw.githubusercontent.com/infomultix2-max/ex-test/main/index.json",
   "maintainerUrl": "https://github.com/MultiX0",
-  "generated": "2026-04-15T21:01:27Z",
+  "generated": "2026-04-15T21:02:57Z",
   "apiVersion": "2",
   "extensions": [
     {
@@ -20,8 +20,8 @@
       ],
       "icon": "https://raw.githubusercontent.com/infomultix2-max/ex-test/main/icons/kolnovel.png",
       "downloadUrl": "https://raw.githubusercontent.com/infomultix2-max/ex-test/main/bundles/com.novon.kolnovel-1.3.7.novext",
-      "sha256": "619c3dcd56322da9f169ef2f83130ad9adc9a0d6827bae2578a10896bfde9ddd",
-      "updatedAt": "2026-04-15T21:01:27Z"
+      "sha256": "59a6af155451e3ee828f2a0035e857276ce0610e77a7b60c502fae972bfc8ea2",
+      "updatedAt": "2026-04-15T21:02:57Z"
     },
     {
       "id": "com.novon.mtlarabic",
@@ -39,8 +39,8 @@
       ],
       "icon": "https://raw.githubusercontent.com/infomultix2-max/ex-test/main/icons/mtlarabic.png",
       "downloadUrl": "https://raw.githubusercontent.com/infomultix2-max/ex-test/main/bundles/com.novon.mtlarabic-1.3.6.novext",
-      "sha256": "e029584cc8896dd7d4a82c43912713e9cba53bc194809a06a23b3423c34c710e",
-      "updatedAt": "2026-04-15T21:01:27Z"
+      "sha256": "e63812bac01c33408fedeb944140cb979182a3b76ba5624f6b1f1a6ff7d53188",
+      "updatedAt": "2026-04-15T21:02:57Z"
     },
     {
       "id": "com.novon.template",
@@ -56,8 +56,8 @@
       ],
       "icon": "https://raw.githubusercontent.com/infomultix2-max/ex-test/main/icons/template.png",
       "downloadUrl": "https://raw.githubusercontent.com/infomultix2-max/ex-test/main/bundles/com.novon.template-1.0.0.novext",
-      "sha256": "8d0383b0da0375c18620ba0e135fd42575cc18ad140266085375c547f21f40cc",
-      "updatedAt": "2026-04-15T21:01:27Z"
+      "sha256": "61f348ecae0bd6992657b401c21d2cc60869d3b7ce152e583547e2a476ec372d",
+      "updatedAt": "2026-04-15T21:02:57Z"
     },
     {
       "id": "com.novon.mknov",
@@ -71,8 +71,8 @@
       "categories": [],
       "icon": "https://raw.githubusercontent.com/infomultix2-max/ex-test/main/icons/mknov.png",
       "downloadUrl": "https://raw.githubusercontent.com/infomultix2-max/ex-test/main/bundles/com.novon.mknov-1.0.0.novext",
-      "sha256": "092c90de4a9cf64556475d5d02a66efe549eec976796a8cfa3834788de8f4dfd",
-      "updatedAt": "2026-04-15T21:01:27Z"
+      "sha256": "bed0d2839b4e7902db9589b2f88f6bd272627747e01ac8e02f467f3be6e22a71",
+      "updatedAt": "2026-04-15T21:02:57Z"
     }
   ]
 }
