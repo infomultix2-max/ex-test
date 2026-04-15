@@ -87,16 +87,14 @@ def bundle_extensions():
                 entry["version"] = version
                 entry["sha256"] = bundle_hash
                 entry["downloadUrl"] = f"{BASE_URL}/bundles/{bundle_filename}"
-                # Use simple repo name as icon filename e.g. com.novon.kolnovel -> kolnovel.png
-                icon_name = ext_id.split(".")[-1]
-                entry["icon"] = f"{BASE_URL}/icons/{icon_name}.png"
+                entry["icon"] = f"{BASE_URL}/{ext_id}/icon.png"
                 entry["updatedAt"] = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
                 updated = True
                 break
         
         if not updated:
             print(f"  Adding {ext_id} to the index...")
-            entry_icon = f"{BASE_URL}/icons/{ext_id.split('.')[-1]}.png"
+            entry_icon = f"{BASE_URL}/{ext_id}/icon.png"
             index["extensions"].append({
                 "id": ext_id,
                 "name": manifest.get("name", ext_id),
