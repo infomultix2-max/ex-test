@@ -295,8 +295,9 @@
 
     async function search(query, page) {
         const url = `https://mknov.com/api/search/advanced?query=${encodeURIComponent(query)}&page=${page}`;
-        const response = await http.get(url);
-
+        const rawResponse = await http.get(url);
+        const response = JSON.parse(rawResponse);
+        
         let novels = [];
         let hasNextPage = false;
 
@@ -307,7 +308,7 @@
                 title: item.name,
                 coverUrl: item.image_url ? toAbsolute(item.image_url) : ''
             }));
-
+            
             const pagination = response.data.pagination || {};
             hasNextPage = pagination.hasMore || false;
         }
